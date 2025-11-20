@@ -1,0 +1,105 @@
+import turtle
+import time
+import random
+
+wn = turtle.Screen()
+wn.title("Turtle Snake Game")
+wn.bgcolor("indigo")
+
+# Blue Turtle
+t = turtle.Turtle()
+t.speed(0)
+t.pensize(3)
+t.color("blue","blue")        # body + line color
+t.shape("turtle")
+
+# Red Turtle
+r = turtle.Turtle()
+r.speed(0)
+r.pensize(3)
+r.color("red","red")         # body + line color
+r.shape("turtle")
+
+# Place turtles without drawing from center
+t.penup(); t.goto(-100, 10); t.pendown()
+r.penup(); r.goto(100, 10); r.pendown()
+
+visited_positions_t = {(round(t.xcor()), round(t.ycor()))}
+visited_positions_r = {(round(r.xcor()), round(r.ycor()))}
+
+def check_collision(active_turtle, active_positions, other_positions, name):
+    pos = (round(active_turtle.xcor()), round(active_turtle.ycor()))
+    if pos in active_positions or pos in other_positions:
+        print(f"BOOM! {name} blew up!")
+        wn.ontimer(wn.bye, 1000)
+        # time.sleep(1)
+        # wn.bye()
+    else:
+        active_positions.add(pos)
+
+# Blue turtle controls
+def t_forward(): t.setheading(90); t.forward(20); check_collision(t, visited_positions_t, visited_positions_r, "Blue Turtle")
+def t_left(): t.setheading(180); t.forward(20); check_collision(t, visited_positions_t, visited_positions_r, "Blue Turtle")
+def t_right(): t.setheading(0); t.forward(20); check_collision(t, visited_positions_t, visited_positions_r, "Blue Turtle")
+def t_down(): t.setheading(270); t.forward(20); check_collision(t, visited_positions_t, visited_positions_r, "Blue Turtle")
+
+# Red turtle controls
+def r_forward(): r.setheading(90); r.forward(20); check_collision(r, visited_positions_r, visited_positions_t, "Red Turtle")
+def r_left(): r.setheading(180); r.forward(20); check_collision(r, visited_positions_r, visited_positions_t, "Red Turtle")
+def r_right(): r.setheading(0); r.forward(20); check_collision(r, visited_positions_r, visited_positions_t, "Red Turtle")
+def r_down(): r.setheading(270); r.forward(20); check_collision(r, visited_positions_r, visited_positions_t, "Red Turtle")
+
+# AI movement for single-player mode
+def ai_move():
+    moves = {"up":(0,50),"down":(0,-50),"left":(-50,0),"right":(50,0)}
+    safe_moves = []
+    for d,(dx,dy) in moves.items():
+        nx, ny = round(r.xcor()+dx), round(r.ycor()+dy)
+        pos = (nx, ny)
+        if -wn.window_width()//2 < nx < wn.window_width()//2 and -wn.window_height()//2 < ny < wn.window_height()//2:
+            if pos not in visited_positions_r and pos not in visited_positions_t:
+                safe_moves.append((d,pos))
+    if safe_moves:
+        d,pos = random.choice(safe_moves)
+        if d=="up": r.setheading(90)
+        elif d=="down": r.setheading(270)
+        elif d=="left": r.setheading(180)
+        elif d=="right": r.setheading(0)
+        r.goto(pos[0],pos[1])
+        visited_positions_r.add(pos)
+    else:
+        print("AI trapped! Red Turtle blew up!")
+        time.sleep(1)
+        wn.bye()
+        return  # stop scheduling after game ends
+    wn.ontimer(ai_move,1000)
+
+def quit_game(): wn.bye()
+
+def auto_zoom():
+    x1, y1 = t.position()
+    x2, y2 = r.position()
+    margin = 100
+    max_x = max(abs(x1), abs(x2)) + margin
+    max_y = max(abs(y1), abs(y2)) + margin
+    wn.setworldcoordinates(-max_x, -max_y, max_x, max_y)
+    t.color("blue", "blue")
+    r.color("red", "red")
+    wn.ontimer(auto_zoom, 200)
+
+# Ask for mode
+mode = wn.textinput("Game Mode","Enter 1 for single-player, 2 for two-player:")
+wn.listen()
+wn.onkeypress(t_forward,"w"); wn.onkeypress(t_left,"a"); wn.onkeypress(t_right,"d"); wn.onkeypress(t_down,"s")
+
+if mode=="2":
+    wn.onkeypress(r_forward,"Up"); wn.onkeypress(r_left,"Left"); wn.onkeypress(r_right,"Right"); wn.onkeypress(r_down,"Down")
+else:
+    wn.ontimer(ai_move,500)
+
+wn.onkeypress(quit_game,"q")
+
+# Start zoom loop
+# auto_zoom()
+
+wn.mainloop()
